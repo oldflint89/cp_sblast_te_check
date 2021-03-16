@@ -17,6 +17,10 @@ vt_api_key: str = ""
 vt_query: str = "size:15MB- "
 malware_dir: str = os.path.expanduser("~/malware/")
 
+if not cp_api_key or not vt_api_key:
+    print("Define API keys in script code first!")
+    exit()
+
 image_dict = {
     1: "Microsoft Windows: XP - 32bit SP3, Office: 2003, 2007",
     2: "Microsoft Windows: 7 - 32bit, Office: 2003, 2007",

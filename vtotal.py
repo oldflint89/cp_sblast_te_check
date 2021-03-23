@@ -47,6 +47,8 @@ class VTotal:
         response = requests.get(
             url=f"{self.url}/files/{sha1}/download", headers=self.headers
         )
+        if response.ok:
+            print(f"File {filename} downloaded successfully")
         with open(f"{directory}{filename}", "wb") as f:
             f.write(response.content)
         return f"{directory}{filename}"

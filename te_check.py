@@ -44,18 +44,18 @@ while True:
 filetype: Optional[str] = None
 while filetype not in filetypes:
     filetype = input(
-        "What file type would you need to inspect (peexe, pdf, doc, etc)? "
+        "What file type would you need to inspect (peexe, document, pdf, doc, etc.)? "
     )
     if filetype:
         vt_query += "type:" + filetype + " "
     else:
         print("Wrong file type!")
         continue
-    if filetype in ["doc", "docx"]:
+    if filetype in ["doc", "docx", "document"]:
         vt_query += 'AND not name: "vbaProject.bin" AND not name:".adp" '
 print("And now we need to define antivirus detections")
 print(
-    "https://support.virustotal.com/hc/en-us/articles/360001385857-Identifying-files-according-to-antivirus-detections"
+    "Full AV list: https://support.virustotal.com/hc/en-us/articles/360001385857-Identifying-files-according-to-antivirus-detectionsi"
 )
 while True:
     av_clean: str = input(
@@ -70,9 +70,11 @@ while True:
             break
         else:
             print("Wrong antivirus definition!")
+    else:
+        print("Wrong antivirus definition!")
 
 engines: str = input(
-    "Optional - input malware families separated by comma, e.g. ransom, maze: "
+    "Optional - input malware families separated by comma, e.g. ransom, maze (press Enter to skip): "
 )
 if engines:
     engines_list: List[str] = engines.split(",")
@@ -81,7 +83,7 @@ if engines:
 while True:
     try:
         positives_plus: int = int(
-            input("How many AV should detect file as malicious(at least)? ")
+            input("How many AV should detect a file as malicious(at least)? ")
         )
         if positives_plus < 1:
             raise ValueError
@@ -93,24 +95,31 @@ while True:
 while True:
     try:
         positives_minus: int = int(
-            input("How many AV should detect file as malicious(max)? ")
+            input("How many AV should detect a file as malicious(max)? ")
         )
         if positives_minus < 1 or positives_minus <= positives_plus:
             raise ValueError
         vt_query += "p:" + str(positives_minus) + "- "
         break
     except ValueError:
-        print("Value should be positive INT and not bigger then previous value")
+        print("Value should be positive INT and bigger then previous value")
 
 
 print(f"Current query to VirusTotal is {vt_query}")
-vt_query += input("Would you like to add something to the query(e.g. lang:russian)?: ")
+vt_query += input(
+    "Would you like to add something to the query(e.g. lang:russian, fs:2021-03-15+)? (press Enter to skip): "
+)
 pprint(image_dict)
 images: Optional[str] = None
 while True:
     try:
-        images = input("What images would you need to emulate files in? (e.g. 1,2,7) ")
-        img_list: List[str] = images.split(",")
+        images = input(
+            "What images would you need to emulate files in? (e.g. 1,2,7) (default - 1,4, press Enter to skip): "
+        )
+        if images:
+            img_list: List[str] = images.split(",")
+        else:
+            img_list = ["1", "4"]
         for i in img_list:
             if int(i) in range(1, 8):
                 pass
@@ -174,7 +183,7 @@ for i in sblasts.values():
         print(f"And we have {real_malfiles} good file(s) for further steps")
 # Waiting for emulation verdicts
 print(
-    "Start to query SandBlast service for verdicts. You can stop script running with Ctrl+C when you decide that there is enough files"
+    "Start to query SandBlast service for verdicts. You can stop the script running with Ctrl+C when you decide there are enough files"
 )
 for i in sblasts.values():
     try:
@@ -230,23 +239,31 @@ print(f"Medium confidence files: {len(os.listdir(medium_confidence_dir))}")
 print(f"Low confidence files: {len(os.listdir(low_confidence_dir))}")
 benign_files = [f for f in os.listdir(malware_dir) if os.path.isfile(malware_dir + f)]
 print(f"Still benign files: {len(benign_files)}")
-print(
-    f'And now you can create password protected archive with the following command: "zip -re malware.zip {high_confidence_dir} {medium_confidence_dir}"'
-)
+# If list vt_sha1_list isn't empty, we have something to add into archive
 vt_sha1_list = [i["sha1"] for i in results if i["confidence"] in [2, 3]]
 if vt_sha1_list:
-    choice: str = input(
-        "Would you need a web link to download high and medium severity malware files in password protected arcive? [Y/n] "
+    print(
+        f"And now we are gonna create the password-protected archive with high and medium confidence level malicious files. Please, enter a password for the archive twice."
     )
-    if choice in ["y", "Y"]:
-        password: str = ""
-        while not password:
-            password = input("Input your password for archive file: ")
-        zip_id: str = vt_service.zip_files(password, vt_sha1_list)
-        while True:
-            status = vt_service.zip_files_query(zip_id)
-            if status == "finished":
-                break
-        print(
-            f"You can download the malware within 1 hour: {vt_service.download_url(zip_id)}"
+    rc = sp.run(
+        [
+            "zip",
+            "-re",
+            malware_dir + "malware.zip",
+            high_confidence_dir,
+            medium_confidence_dir,
+        ]
+    )
+    while not rc.returncode == 0:
+        rc = sp.run(
+            [
+                "zip",
+                "-re",
+                malware_dir + "malware.zip",
+                high_confidence_dir,
+                medium_confidence_dir,
+            ]
         )
+    print(
+        f'The archive {malware_dir + "malware.zip"} has been created, you can download it via SCP protocol'
+    )

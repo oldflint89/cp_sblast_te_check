@@ -120,7 +120,15 @@ filetypes = [
     "lnk",
     "ttf",
     "rom",
-    "",
+    "document",
+    "executable",
+    "internet",
+    "image",
+    "audio",
+    "video",
+    "compressed",
+    "source code",
+    "apple",
 ]
 av_set = (
     "acronis",

@@ -94,8 +94,8 @@ class SBlast:
             response = requests.post(
                 url=f"{self.url}/upload", headers=self.headers, files=curr_file
             )
-            if response.status_code == 200:
-                print(response.status_code)
+            if response.ok:
+                print(f"File {self.filename} uploaded successfully")
                 response_j = response.json()
                 if verbose:
                     print(f"response: {response_j}")
